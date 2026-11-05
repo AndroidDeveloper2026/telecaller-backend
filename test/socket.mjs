@@ -1,0 +1,23 @@
+// Verifies Socket.IO auth + role-scoped events. Run: node test/socket.mjs (API must be running)
+import { io } from '../../frontend/web/node_modules/socket.io-client/build/esm/index.js';
+const API = 'http://localhost:3000/api', URL = 'http://localhost:3000';
+const j = async (m, p, t, b) => (await fetch(API + p, { method: m, headers: { 'Content-Type': 'application/json', ...(t ? { Authorization: `Bearer ${t}` } : {}) }, body: b ? JSON.stringify(b) : undefined })).json();
+const A = (await j('POST', '/auth/login', null, { email: 'admin@radnus.com', password: 'ChangeMe@123' })).accessToken;
+const run = Date.now().toString().slice(-6);
+const e1 = await j('POST', '/employees', A, { name: 'Sock One', email: `s1${run}@t.com`, password: 'Passw0rd!1' });
+const e2 = await j('POST', '/employees', A, { name: 'Sock Two', email: `s2${run}@t.com`, password: 'Passw0rd!1' });
+const L1 = await j('POST', '/auth/login', null, { email: e1.email, password: 'Passw0rd!1' }), L2 = await j('POST', '/auth/login', null, { email: e2.email, password: 'Passw0rd!1' });
+const got = { admin: [], e1: [], e2: [] }; let bad = false;
+const conn = (tok, k) => { const s = io(URL, { auth: { token: tok }, transports: ['websocket'] }); ['assignment.updated', 'notification.new', 'dashboard.refresh', 'call.updated'].forEach((ev) => s.on(ev, () => got[k].push(ev))); return s; };
+const sa = conn(A, 'admin'), s1 = conn(L1.accessToken, 'e1'), s2 = conn(L2.accessToken, 'e2');
+const sb = io(URL, { auth: { token: 'garbage' }, transports: ['websocket'] }); sb.on('disconnect', () => (bad = true));
+await new Promise((r) => setTimeout(r, 1500));
+const c = await j('POST', '/contacts', A, { name: 'Sock Contact', phone: `8${run}${run}1`.slice(0, 11) });
+await j('POST', '/assignments/assign', A, { employeeId: e1._id, contactIds: [c._id] });
+await new Promise((r) => setTimeout(r, 1000));
+const ok = (c, m) => console.log(`${c ? 'PASS' : 'FAIL'}  ${m}`);
+ok(bad, 'invalid token is disconnected');
+ok(got.e1.includes('assignment.updated') && got.e1.includes('notification.new'), 'assigned employee receives assignment + notification');
+ok(got.e2.length === 0, 'other employee receives nothing');
+ok(got.admin.includes('dashboard.refresh'), 'admin receives dashboard.refresh');
+process.exit(0);
