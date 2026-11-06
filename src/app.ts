@@ -1,9 +1,11 @@
 import express, { NextFunction, Request, Response } from 'express';
 import helmet from 'helmet';
+import mongoose from 'mongoose';
 import cors from 'cors';
 import swaggerUi from 'swagger-ui-express';
 import { MulterError } from 'multer';
 import { HttpError } from './common/http';
+import { corsOrigin } from './common/cors';
 import { buildOpenApi } from './common/openapi';
 import { authRouter } from './modules/auth/auth.routes';
 import { employeesRouter } from './modules/employees/employees.routes';
@@ -20,9 +22,11 @@ export function createApp() {
   const app = express();
   app.disable('x-powered-by'); app.set('trust proxy', 1);
   app.use(helmet({ contentSecurityPolicy: false }));
-  app.use(cors({ origin: (process.env.WEB_URL || 'http://localhost:5173').split(','), credentials: true }));
+  app.use(cors({ origin: corsOrigin, credentials: true }));
+  app.get('/api/health', (_q, res) => res.json({ ok: true }));
   app.use(express.json({ limit: '1mb' }));
   const api = express.Router();
+  api.use((req, _res, next) => (req.path === '/health' || mongoose.connection.readyState === 1 ? next() : next(new HttpError(503, 'Database is not connected yet. Check MONGODB_URI and that MongoDB is running.'))));
   api.use('/auth', authRouter); api.use('/employees', employeesRouter); api.use('/contacts', contactsRouter); api.use('/assignments', assignmentsRouter); api.use('/call-logs', callLogsRouter);
   api.use('/reports', reportsRouter); api.use('/dashboard', dashboardRouter); api.use('/uploads', uploadsRouter); api.use('/notifications', notificationsRouter); api.use('/settings', settingsRouter);
   app.use('/api', api);
