@@ -20,6 +20,29 @@ export const toUser = (id: string, event: string, data: any) => io?.to(`user:${i
 /** Notify the coordinator (team lead) of a telecaller, if any. */
 export const toLead = async (employeeId: string, event: string, data: any) => { const u: any = await User.findById(employeeId).select('teamLead').lean(); if (u?.teamLead) toUser(String(u.teamLead), event, data); };
 export const toAdmins = (event: string, data: any) => io?.to('admins').emit(event, data);
+//----- second change ----------
+// import { Server as HttpServer } from 'http';
+// import { Server } from 'socket.io';
+// import { authUserFromToken } from './auth';
+// import { corsOrigin } from './cors';
+// import { User } from '../models';
+
+// let io: Server | null = null;
+// export function initSocket(http: HttpServer) {
+//   io = new Server(http, { cors: { origin: corsOrigin, credentials: true } });
+//   io.on('connection', async (client) => {
+//     try {
+//       const token = (client.handshake.auth?.token as string) || String(client.handshake.headers.authorization || '').replace(/^Bearer\s+/i, '');
+//       const u = await authUserFromToken(token);
+//       client.join(`user:${u.id}`); if (u.role === 'ADMIN') client.join('admins');
+//     } catch { client.emit('auth_error', 'unauthorized'); client.disconnect(true); }
+//   });
+//   return io;
+// }
+// export const toUser = (id: string, event: string, data: any) => io?.to(`user:${id}`).emit(event, data);
+// /** Notify the coordinator (team lead) of a telecaller, if any. */
+// export const toLead = async (employeeId: string, event: string, data: any) => { const u: any = await User.findById(employeeId).select('teamLead').lean(); if (u?.teamLead) toUser(String(u.teamLead), event, data); };
+// export const toAdmins = (event: string, data: any) => io?.to('admins').emit(event, data);
 
 //----- 12.11.2026 ------------
 // import { Server as HttpServer } from 'http';

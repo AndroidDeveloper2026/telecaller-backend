@@ -2,14 +2,8 @@ import { NextFunction, Request, RequestHandler, Response, Router } from 'express
 import { ZodTypeAny } from 'zod';
 import { authenticate, requireRole, Role } from './auth';
 
-export class HttpError extends Error {
-  constructor(public status: number, public detail: string | string[]) { super(Array.isArray(detail) ? detail.join(', ') : detail); }
-}
-export const badRequest = (m: string | string[]) => new HttpError(400, m);
-export const notFound = (m = 'Not found') => new HttpError(404, m);
-export const forbidden = (m = 'Insufficient permissions') => new HttpError(403, m);
-export const conflict = (m: string) => new HttpError(409, m);
-
+export * from './errors';
+import { HttpError, badRequest } from './errors';
 export const wrap = (fn: (req: Request, res: Response, next: NextFunction) => any): RequestHandler => (req, res, next) => Promise.resolve(fn(req, res, next)).catch(next);
 
 export const validate = (s: { body?: ZodTypeAny; query?: ZodTypeAny }): RequestHandler => (req, _res, next) => {
@@ -34,7 +28,6 @@ export function api(router: Router, tag: string, base: string) {
     (router as any)[method](path, ...guards, ...handlers.map(send));
   };
 }
-
 
 //----- 12.11.2026 ------------
 // import { NextFunction, Request, RequestHandler, Response, Router } from 'express';

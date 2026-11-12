@@ -51,6 +51,7 @@ r('patch', '/presence', ['EMPLOYEE'], 'Set presence', validate({ body: z.object(
   await User.updateOne({ _id: req.user!.id }, { presence: req.body.presence }); toAdmins('presence.updated', { employeeId: req.user!.id, presence: req.body.presence }); toLead(req.user!.id, 'presence.updated', { employeeId: req.user!.id, presence: req.body.presence }); return { presence: req.body.presence };
 });
 
+
 //---- 12.11.2026 --------
 // import { Router } from 'express';
 // import bcrypt from 'bcryptjs';
