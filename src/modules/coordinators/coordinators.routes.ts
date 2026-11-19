@@ -36,15 +36,14 @@ r('put', '/:id/team', A, 'Set the coordinator\'s team (replaces current members)
   await setTeam(params(req), req.body.employeeIds); return { ok: true, teamSize: req.body.employeeIds.length };
 });
 r('patch', '/:id/status', A, 'Activate / deactivate', validate({ body: z.object({ status: z.enum(['ACTIVE', 'INACTIVE']) }).strict() }), async (req) => {
-  const u = await User.findOneAndUpdate({ _id: params(req), role: 'COORDINATOR' }, { status: req.body.status, ...(req.body.status === 'INACTIVE' ? { $unset: { refreshTokenHash: 1 } } : {}) }, { new: true }).lean();
+  const u = await User.findOneAndUpdate({ _id: params(req), role: 'COORDINATOR' }, { status: req.body.status, ...(req.body.status === 'INACTIVE' ? { $unset: { refreshTokenHash: 1, refreshSessions: 1 } } : {}) }, { new: true }).lean();
   if (!u) throw notFound('Coordinator not found'); return sanitize(u);
 });
 r('post', '/:id/reset-password', A, 'Reset password', validate({ body: z.object({ password: z.string().min(8).max(72) }).strict() }), async (req) => {
-  const x = await User.updateOne({ _id: params(req), role: 'COORDINATOR' }, { passwordHash: await hash(req.body.password), $unset: { refreshTokenHash: 1 } }); if (!x.matchedCount) throw notFound('Coordinator not found'); return { ok: true };
+  const x = await User.updateOne({ _id: params(req), role: 'COORDINATOR' }, { passwordHash: await hash(req.body.password), $unset: { refreshTokenHash: 1, refreshSessions: 1 } }); if (!x.matchedCount) throw notFound('Coordinator not found'); return { ok: true };
 });
 
-
-//----- second change --------
+//------- 19-11-2026 ------------------
 // import { Router } from 'express';
 // import { z } from 'zod';
 // import { User } from '../../models';
